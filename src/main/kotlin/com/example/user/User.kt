@@ -1,9 +1,7 @@
 package com.example.user
 
-import kotlinx.datetime.Instant
-import kotlinx.serialization.Serializable
+import java.time.Instant
 
-@Serializable
 data class User(
 	val email: String,
 	val username: String,

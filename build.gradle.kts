@@ -60,29 +60,26 @@ graalvmNative {
 }
 
 val http4kVersion: String by project
-val http4kConnectVersion: String by project
 val junitVersion: String by project
 val kotlinVersion: String by project
 val exposedVersion: String by project
-val postgresVersion: String by project
 
 dependencies {
 	// jetbrains
 	implementation("org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}")
 
 	// http4k
-    implementation("org.http4k:http4k-client-okhttp:${http4kVersion}")
     implementation("org.http4k:http4k-contract:${http4kVersion}")
     implementation("org.http4k:http4k-core:${http4kVersion}")
-    implementation("org.http4k:http4k-format-kotlinx-serialization:${http4kVersion}")
+    implementation("org.http4k:http4k-format-jackson:${http4kVersion}")
 
 	// exposed orm
 	implementation("org.jetbrains.exposed:exposed-core:${exposedVersion}")
-	implementation("org.jetbrains.exposed:exposed-kotlin-datetime:${exposedVersion}")
+	implementation("org.jetbrains.exposed:exposed-java-time:${exposedVersion}")
 	implementation("org.jetbrains.exposed:exposed-jdbc:${exposedVersion}")
 
 	// postgres driver
-	implementation("org.postgresql:postgresql:${postgresVersion}")
+	implementation("org.postgresql:postgresql:42.7.3")
 
 	// db connection pool
 	implementation("com.zaxxer:HikariCP:4.0.3")

@@ -1,11 +1,9 @@
 package com.example.user
 
 import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
-import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.javatime.timestamp
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class UserRepository {
@@ -60,5 +58,9 @@ class UserRepository {
 			it[createdAt] = user.createdAt
 			it[updatedAt] = user.updatedAt
 		}
+	}
+
+	fun delete(username: String) = transaction {
+		Users.deleteWhere { Users.username eq username }
 	}
 }

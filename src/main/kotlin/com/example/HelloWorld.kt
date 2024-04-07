@@ -1,12 +1,11 @@
 package com.example
 
-import com.example.formats.kotlinXMessage
-import com.example.formats.kotlinXMessageLens
+import com.example.formats.jacksonMessage
+import com.example.formats.jacksonMessageLens
 import com.example.routes.ExampleContractRoute
 import com.example.user.userRoutes
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import kotlinx.serialization.Serializable
 import org.http4k.contract.bind
 import org.http4k.contract.contract
 import org.http4k.contract.openapi.ApiInfo
@@ -24,7 +23,7 @@ import org.http4k.filter.CorsPolicy
 import org.http4k.filter.DebuggingFilters
 import org.http4k.filter.ResponseFilters
 import org.http4k.filter.ServerFilters
-import org.http4k.format.KotlinxSerialization
+import org.http4k.format.Jackson
 import org.http4k.lens.Query
 import org.http4k.lens.int
 import org.http4k.routing.bind
@@ -34,22 +33,19 @@ import org.http4k.server.asServer
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.DatabaseConfig
 import org.jetbrains.exposed.sql.transactions.TransactionManager
+import java.time.Clock
 
 fun app(): HttpHandler = routes(
 	"/ping" bind GET to {
 		Response(OK).body("pong")
 	},
 
-	"/formats/json/kotlinx" bind GET to {
-		Response(OK).with(kotlinXMessageLens of kotlinXMessage)
+	"/formats/json/jackson" bind GET to {
+		Response(OK).with(jacksonMessageLens of jacksonMessage)
 	},
 
 	"/contract/api/v1" bind contract {
-//		renderer = OpenApi3(ApiInfo("HelloWorld API", "v1.0"), json = )
-		renderer = OpenApi3(
-			ApiInfo("HelloWorld API", "v1.0"),
-			KotlinxSerialization
-		)
+		renderer = OpenApi3(ApiInfo("HelloWorld API", "v1.0"))
 
 		// Return Swagger API definition under /contract/api/v1/swagger.json
 		descriptionPath = "/swagger.json"
@@ -64,16 +60,13 @@ fun app(): HttpHandler = routes(
 	"api/v1/users" bind userRoutes()
 )
 
-/**
- * @return left = kotlinx, right = java
- */
-private fun getClock(): Pair<kotlinx.datetime.Clock, java.time.Clock> {
-	return Pair(kotlinx.datetime.Clock.System, java.time.Clock.systemUTC())
+private fun getClock(): Clock {
+	return Clock.systemUTC()
 }
 
 fun main() {
 	// clock
-	val (kotlinClock, javaClock) = getClock()
+	val javaClock = getClock()
 
 	// database config/connection
 	val hikariConfig = HikariConfig().apply {
@@ -94,8 +87,8 @@ fun main() {
 	val events = EventFilters.AddTimestamp(javaClock)
 		.then(EventFilters.AddEventName())
 		.then(EventFilters.AddZipkinTraces())
-		.then(addRequestCount())
-		.then(AutoMarshallingEvents(KotlinxSerialization))
+//		.then(addRequestCount())
+		.then(AutoMarshallingEvents(Jackson))
 
 	// cors
 	val cors = ServerFilters.Cors(CorsPolicy.UnsafeGlobalPermissive)
@@ -119,7 +112,7 @@ fun main() {
 			)
 			Response(INTERNAL_SERVER_ERROR).body("Server error")
 		})
-		.then(DebuggingFilters.PrintRequestAndResponse())
+//		.then(DebuggingFilters.PrintRequestAndResponse())
 		.then(cors)
 		.then(app())
 
@@ -129,7 +122,6 @@ fun main() {
 }
 
 // this is our custom event which will be printed in a structured way
-@Serializable
 data class IncomingHttpRequest(
 	val uri: String,
 	val status: Int,
@@ -137,7 +129,6 @@ data class IncomingHttpRequest(
 	val message: String,
 ) : Event
 
-@Serializable
 data class ErrorEvent(
 	val message: String?,
 ) : Event

@@ -1,16 +1,14 @@
 package com.example.user
 
-import kotlinx.serialization.json.Json
 import org.http4k.core.Body
-import org.http4k.core.Method.GET
-import org.http4k.core.Method.POST
+import org.http4k.core.Method.*
 import org.http4k.core.Response
 import org.http4k.core.Status.Companion.BAD_REQUEST
 import org.http4k.core.Status.Companion.CREATED
 import org.http4k.core.Status.Companion.NOT_FOUND
 import org.http4k.core.Status.Companion.OK
 import org.http4k.core.with
-import org.http4k.format.KotlinxSerialization.auto
+import org.http4k.format.Jackson.auto
 import org.http4k.routing.RoutingHttpHandler
 import org.http4k.routing.bind
 import org.http4k.routing.path
@@ -38,10 +36,22 @@ fun userRoutes(): RoutingHttpHandler {
 
 		// insert
 		"" bind POST to {
-			val userJson: String = it.bodyString()
-			val user: User = Json.decodeFromString(userJson)
+			val user: User = userLens(it)
 			repo.insert(user)
 			Response(CREATED)
+		},
+
+		// delete
+		"/{username}" bind DELETE to {
+			val userName = it.path("username") ?: return@to Response(BAD_REQUEST)
+
+			// should be 1 since username is unique
+			val numDeleted = repo.delete(userName)
+			if (numDeleted > 0) {
+				Response(OK)
+			} else {
+				Response(NOT_FOUND)
+			}
 		},
 	)
 }
