@@ -100,19 +100,17 @@ fun main() {
 	// cors
 	val cors = ServerFilters.Cors(CorsPolicy.UnsafeGlobalPermissive)
 
-	val printingApp: HttpHandler = ServerFilters.RequestTracing().then(
-		ResponseFilters.ReportHttpTransaction {
-			// to "emit" an event, just invoke() the Events!
-			events(
-				IncomingHttpRequest(
-					uri = it.request.uri.toString(),
-					status = it.response.status.code,
-					duration = it.duration.toMillis(),
-					message = it.request.toMessage(),
-				)
+	val printingApp: HttpHandler = ResponseFilters.ReportHttpTransaction {
+		// to "emit" an event, just invoke() the Events!
+		events(
+			IncomingHttpRequest(
+				uri = it.request.uri.toString(),
+				status = it.response.status.code,
+				duration = it.duration.toMillis(),
+				message = it.request.toMessage(),
 			)
-		}
-	)
+		)
+	}
 		.then(ServerFilters.CatchAll {
 			events(
 				ErrorEvent(
