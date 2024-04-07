@@ -35,7 +35,7 @@ import org.jetbrains.exposed.sql.DatabaseConfig
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import java.time.Clock
 
-fun app(): HttpHandler = routes(
+val app: HttpHandler = routes(
 	"/ping" bind GET to {
 		Response(OK).body("pong")
 	},
@@ -114,7 +114,7 @@ fun main() {
 		})
 //		.then(DebuggingFilters.PrintRequestAndResponse())
 		.then(cors)
-		.then(app())
+		.then(app)
 
 	val server = printingApp.asServer(SunHttp(9000)).start()
 

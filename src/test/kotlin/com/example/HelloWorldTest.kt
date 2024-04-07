@@ -11,7 +11,6 @@ class HelloWorldTest {
 
     @Test
     fun `Ping test`() {
-		val app = app()
         assertEquals(Response(OK).body("pong"), app(Request(GET, "/ping")))
     }
 
