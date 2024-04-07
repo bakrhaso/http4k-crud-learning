@@ -1,0 +1,6 @@
+POST localhost:9000/contract/api/v1/echo?api=42
+
+{
+    "name": "my name",
+    "message": "my message"
+}

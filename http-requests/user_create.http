@@ -1,0 +1,11 @@
+POST localhost:9000/api/v1/users
+
+{
+    "email": "bkhs@elton.app",
+    "username": "bkhs",
+    "password": "bio is nullable",
+    "bio": "",
+    "image": null,
+    "createdAt": "2024-04-09T17:23:12.484Z",
+    "updatedAt": "2024-04-10T12:05:45.980Z"
+}
