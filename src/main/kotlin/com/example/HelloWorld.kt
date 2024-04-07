@@ -6,15 +6,19 @@ import com.example.routes.ExampleContractRoute
 import com.example.user.userRoutes
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import kotlinx.serialization.Serializable
 import org.http4k.contract.bind
 import org.http4k.contract.contract
 import org.http4k.contract.openapi.ApiInfo
 import org.http4k.contract.openapi.v3.OpenApi3
 import org.http4k.contract.security.ApiKeySecurity
-import org.http4k.core.*
+import org.http4k.core.HttpHandler
 import org.http4k.core.Method.GET
+import org.http4k.core.Response
 import org.http4k.core.Status.Companion.INTERNAL_SERVER_ERROR
 import org.http4k.core.Status.Companion.OK
+import org.http4k.core.then
+import org.http4k.core.with
 import org.http4k.events.*
 import org.http4k.filter.CorsPolicy
 import org.http4k.filter.DebuggingFilters
@@ -41,7 +45,11 @@ fun app(): HttpHandler = routes(
 	},
 
 	"/contract/api/v1" bind contract {
-		renderer = OpenApi3(ApiInfo("HelloWorld API", "v1.0"))
+//		renderer = OpenApi3(ApiInfo("HelloWorld API", "v1.0"), json = )
+		renderer = OpenApi3(
+			ApiInfo("HelloWorld API", "v1.0"),
+			KotlinxSerialization
+		)
 
 		// Return Swagger API definition under /contract/api/v1/swagger.json
 		descriptionPath = "/swagger.json"
@@ -83,30 +91,35 @@ fun main() {
 	TransactionManager.defaultDatabase = database
 
 	// structured logging
-	val events =
-		EventFilters.AddTimestamp(javaClock)
-			.then(EventFilters.AddEventName())
-			.then(EventFilters.AddZipkinTraces())
-			.then(AddRequestCount())
-			.then(AutoMarshallingEvents(KotlinxSerialization))
+	val events = EventFilters.AddTimestamp(javaClock)
+		.then(EventFilters.AddEventName())
+		.then(EventFilters.AddZipkinTraces())
+		.then(addRequestCount())
+		.then(AutoMarshallingEvents(KotlinxSerialization))
 
 	// cors
 	val cors = ServerFilters.Cors(CorsPolicy.UnsafeGlobalPermissive)
 
-	val printingApp: HttpHandler = ResponseFilters.ReportHttpTransaction {
-		// to "emit" an event, just invoke() the Events!
-		events(
-			IncomingHttpRequest(
-				uri = it.request.uri,
-				status = it.response.status.code,
-				duration = it.duration.toMillis(),
-//				requestBody = it.request.body
+	val printingApp: HttpHandler = ServerFilters.RequestTracing().then(
+		ResponseFilters.ReportHttpTransaction {
+			// to "emit" an event, just invoke() the Events!
+			events(
+				IncomingHttpRequest(
+					uri = it.request.uri.toString(),
+					status = it.response.status.code,
+					duration = it.duration.toMillis(),
+					message = it.request.toMessage(),
+				)
 			)
-		)
-	}
+		}
+	)
 		.then(ServerFilters.CatchAll {
-			events(ErrorEvent(it))
-			Response(INTERNAL_SERVER_ERROR)
+			events(
+				ErrorEvent(
+					message = it.message
+				)
+			)
+			Response(INTERNAL_SERVER_ERROR).body("Server error")
 		})
 		.then(DebuggingFilters.PrintRequestAndResponse())
 		.then(cors)
@@ -118,19 +131,21 @@ fun main() {
 }
 
 // this is our custom event which will be printed in a structured way
+@Serializable
 data class IncomingHttpRequest(
-	val uri: Uri,
+	val uri: String,
 	val status: Int,
 	val duration: Long,
-//	val requestBody: Body,
+	val message: String,
 ) : Event
 
+@Serializable
 data class ErrorEvent(
-	val error: Throwable
+	val message: String?,
 ) : Event
 
 // here is a new EventFilter that adds custom metadata to the emitted events
-fun AddRequestCount(): EventFilter {
+fun addRequestCount(): EventFilter {
 	var requestCount = 0
 	return EventFilter { next ->
 		{

@@ -1,5 +1,6 @@
 package com.example.routes
 
+import kotlinx.serialization.Serializable
 import org.http4k.contract.ContractRoute
 import org.http4k.contract.meta
 import org.http4k.core.Body
@@ -9,8 +10,9 @@ import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status.Companion.OK
 import org.http4k.core.with
-import org.http4k.format.Jackson.auto
+import org.http4k.format.KotlinxSerialization.auto
 
+@Serializable
 data class NameAndMessage(val name: String, val message: String)
 
 // the body lens here is imported as an extension function from the Jackson instance

@@ -74,7 +74,6 @@ dependencies {
     implementation("org.http4k:http4k-client-okhttp:${http4kVersion}")
     implementation("org.http4k:http4k-contract:${http4kVersion}")
     implementation("org.http4k:http4k-core:${http4kVersion}")
-    implementation("org.http4k:http4k-format-jackson:${http4kVersion}")
     implementation("org.http4k:http4k-format-kotlinx-serialization:${http4kVersion}")
 
 	// exposed orm
